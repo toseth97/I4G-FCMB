@@ -221,8 +221,24 @@ app.post("/auth_login", async (req, res)=>{
 })
 
 
-app.post("/send_money", (req, res)=>{
-    
+app.post("/send_money", async (req, res)=>{
+    const recieverAcct = req.body.account
+    try{
+        const token = req.headers.authorization.split(" ")[1]
+        const decodedToken = jwt.verify(token, process.env.TOKEN_SECRET);
+        const user = await User.findOne({_id:decodedToken._id})
+        if(decodedToken._id == user._id){
+            const userID = await Bank_Account.findOne({accountNumber:recieverAcct})
+            
+            const recieverName = await User.findById(userID.user)
+            
+            res.status(200).json({message:recieverName.firstName + " " + recieverName.lastName})
+        }else{
+            res.status(401).json({message:"You are unauthorised"})
+        }
+    }catch (err){
+        return res.status(500).json({error:"Invalid Token!"});
+    }
 })
 
 app.get("/getAccount", async (req, res)=>{
