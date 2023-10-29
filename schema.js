@@ -3,9 +3,13 @@ const passport = require("passport");
 const passportLocalMongoose = require("passport-local-mongoose");
 
 const userSchema = new mongoose.Schema({
+    prefix:{
+        type: String,
+    },
     username:{
         type:String,
         required:true,
+        unique:true
     },
     lastName:{
         type: String,
@@ -35,12 +39,21 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
     },
+    phoneNo:{
+        type:String,
+        require: true
+    }
     
 
 })
 
 
 const bankAccountSchema = new mongoose.Schema({
+    accountBalance:{
+        type:Number,
+        required:true,
+        default:0.0
+    },
     accountNumber: {
       type: String,
       required: true,
@@ -60,6 +73,7 @@ const bankAccountSchema = new mongoose.Schema({
     },
     branchCode: {
       type: Object,
+      required: true,
     },
     IBAN: {
       type: String,
@@ -68,8 +82,8 @@ const bankAccountSchema = new mongoose.Schema({
       type: String,
     },
     user:{
-        type :mongoose.Types.ObjectId ,
-        ref:'User',
+        type :String ,
+        required: true
     },
     dateCreated:{
         type: Date,

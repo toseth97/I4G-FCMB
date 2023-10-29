@@ -135,7 +135,7 @@ app.post("/signup", async (req, res) => {
 
                 });
             } else {
-                
+                const user = await User.findOne({username:email})
                 const dob = new Date(user.dob)
                 const currentAge = new Date().getFullYear() - new Date(dob).getFullYear()
                 const acctType = Number(currentAge) >= 16 ? "Adult_Account":"Children_Account" 
@@ -145,8 +145,28 @@ app.post("/signup", async (req, res) => {
                     bankCode: bankCode,
                     accountType: acctType,
                     branchCode:branch[Math.ceil(Math.random()*9)], 
-                    user: await User.findOne({username:email})
+                    user: user._id,
                 })
+                const mailOptions = {
+                    from: 'FCMB Online Banking i4G <no-reply@fcmb.com>',
+                    to: user.username,
+                    subject: `Congratulations, Your account as been created`,
+                    html:`<div
+                    style="width: 100vw; height: 50vh; border-radius:10px; background-color: rgb(31, 34, 33); padding: 2rem 1.5rem; box-sizing: border-box; color: white;font-size: 1.2rem;">
+                    <h1 style="text-align: center; font-size: 2.5rem;">FCMB i4G</h1>
+                    <p>Dear ${user.lastName + " " + user.firstName},</p>
+                    <p>Thank you for opening an account with us, Your bank account number is below</p>
+                    <p>Account Number: <span style="font-weight: bold;">${accountDetails.accountNumber}</span> </p>
+                    <p> Thank you for banking with us.</p>
+                </div>`,
+                  };
+                  transporter.sendMail(mailOptions, (err, info) => {
+                    if (err) {
+                      console.log(err);
+                    } else {
+                      console.log('Email sent successfully!');
+                    }
+                  });
                 res.status(200).json({
                     user: user.username,
                     fullName: user.lastName + " " + user.firstName,
@@ -164,32 +184,45 @@ app.post("/signup", async (req, res) => {
     }
 });
 
-app.post("/auth_login", (req, res)=>{
-    const { email,password } = req.body;
+app.post("/auth_login", async (req, res)=>{
+    let { username,password } = req.body;
+    // {if (Number(username)){
+    //     const {user} = await Bank_Account.findOne({accountNumber:String(username)})
+    //     username = await User.findOne({_id:user})
+    // }}
+    const user = {
+        username:username.toLowerCase(),
+        password:password
+    }
 
     passport.authenticate("local", (err, user) => {
         if (err) throw err;
         if (!user)
             res.status(401).json({ error: "Username or password incorrect" });
         else {
-            req.logIn(user, (err) => {
+            req.logIn(user, async (err) => {
                 if (err) throw err;
                 const token = jwt.sign(
-                    { _id: user._id, isAgent: user.isAgent },
+                    { _id: user._id, },
                     process.env.TOKEN_SECRET
                 );
+                const loggedUser = await User.findOne({username:username}).select(["-salt", "-hash"])
+                const account = await Bank_Account.findOne({user:loggedUser._id}).select(["-_id", "-user", "-__v"])
                 res.header("auth-token", token).status(200).json({
-                    message: "User logged in",
-                    user: user.fullName,
+                    email:loggedUser.username,
+                    fullName: loggedUser.lastName + " " + loggedUser.firstName,
+                    account,
                     token: token,
-                    isagent:user.isAgent
                 });
             });
         }
     })(req, res)
+    
+})
 
 
-
+app.post("/send_money", (req, res)=>{
+    
 })
 
 
