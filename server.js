@@ -249,10 +249,14 @@ app.get("/getAccount", async (req, res)=>{
         const user = await User.findOne({_id:decodedToken._id})
         if(decodedToken._id == user._id){
             const userID = await Bank_Account.findOne({accountNumber:recieverAcct})
-            
             const recieverName = await User.findById(userID.user)
+            if (userID){
+                res.status(200).json({message:recieverName.firstName + " " + recieverName.lastName})
+
+            }else{
+                res.status(401).json({error:"Account not found"})
+            }
             
-            res.status(200).json({message:recieverName.firstName + " " + recieverName.lastName})
         }else{
             res.status(401).json({message:"You are unauthorised"})
         }
