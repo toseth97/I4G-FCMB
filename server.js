@@ -223,21 +223,147 @@ app.post("/auth_login", async (req, res)=>{
 
 app.post("/send_money", async (req, res)=>{
     const recieverAcct = req.body.account
+    const description = req.body.description
+    const amount = req.body.amount
     try{
         const token = req.headers.authorization.split(" ")[1]
         const decodedToken = jwt.verify(token, process.env.TOKEN_SECRET);
         const user = await User.findOne({_id:decodedToken._id})
+        
         if(decodedToken._id == user._id){
-            const userID = await Bank_Account.findOne({accountNumber:recieverAcct})
+            const recieverAccount = await Bank_Account.findOne({accountNumber:recieverAcct})
+            const senderAccount = await Bank_Account.findOne({user:user._id})
+            const recieverUser = await User.findOne({_id:recieverAccount.user})
+            console.log(recieverUser)
+            if(senderAccount.accountBalance >= Number(amount)){
+                senderAccount.accountBalance = Number(senderAccount.accountBalance) - Number(amount)
+                recieverAccount.accountBalance = Number(recieverAccount.accountBalance) + Number(amount)
+                const saveSender = await senderAccount.save()
+                const savereciever = await recieverAccount.save()
+                const transaction = await Transaction.create({
+                    transactionId : require("crypto").randomBytes(16).toString("hex"),
+                    amount:amount,
+                    transactionType: "debit",
+                    transactionDate: new Date(),
+                    sourceAccount: senderAccount.accountNumber,
+                    destinationAccount: recieverAccount.accountNumber,
+                    description: description,
+                      
+                })
+                const mailOptionsDebit = {
+                    from: 'Fund Fortress Online Banking i4G <no-reply@fcmb.com>',
+                    to: user.username,
+                    subject: `Fund Fortress Transaction Notification`,
+                    html:`<div
+                    style="width: 100vw; min-height: 60vh; border-radius:10px; background-color: rgb(31, 34, 33); padding: 2rem 1.5rem; box-sizing: border-box; color: white;font-size: 1.1rem;">
+                    <p style="margin: 0;">Dear ${user.lastName + " " + user.firstName} ,</p>
+                    <small
+                        style="opacity:.7; font-size: .8rem; border-bottom: 1px solid rgb(186, 175, 175); display: block; padding-bottom: 2rem;">Transaction
+                        notification</small>
+                    <p>Debit alert details</p>
             
-            const recieverName = await User.findById(userID.user)
+                    <div style="display: flex; justify-content: space-around; font-size: .9rem; ">
+                        <div style="margin-right: 4rem">
+                            <p style="font-weight: bold; font-size: 1.1rem; color: rgb(120, 152, 240);">Amount</p>
+                            <p>NGN ${amount}</p>
+                        </div>
+                        <div>
+                            <p style="font-weight: bold; font-size: 1.1rem; color: rgb(120, 152, 240);">Current Balance</p>
+                            <p>NGN ${senderAccount.accountBalance}</p>
+                        </div>
             
-            res.status(200).json({message:recieverName.firstName + " " + recieverName.lastName})
+                    </div>
+                    <div>
+                        <p style="font-weight: bold; font-size: 1.1rem; margin-bottom: 0; color: rgb(120, 152, 240);">Description
+                        </p>
+                        <p style="margin-top: 0;">${transaction.description}</p>
+                    </div>
+                    <div>
+                        <p style="font-weight: bold; font-size: 1.1rem; margin-bottom: 0; ">Transaction Reference</p>
+                        <p style="margin-top: 0;">${transaction.transactionId}</p>
+                    </div>
+                    <div>
+                        <p style="font-weight: bold; font-size: 1.1rem; margin-bottom: 0;">Transactin Date/Time</p>
+                        <p style="margin-top: 0;">${new Date(transaction.transactionDate).toLocaleDateString("en-us", {
+                            weekday: 'long',
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric',
+                          })}<br> ${new Date(transaction.transactionDate).toLocaleTimeString("en-us")}</p>
+                    </div>
+                    <p> Thank you for banking with us.</p>
+                </div>`,
+                  };
+
+                  const mailOptionsCredit = {
+                    from: 'Fund Fortress Online Banking i4G <no-reply@fcmb.com>',
+                    to: recieverUser.username,
+                    subject: `Fund Fortress Transaction Notification`,
+                    html:`<div
+                    style="width: 100vw; min-height: 60vh; border-radius:10px; background-color: rgb(31, 34, 33); padding: 2rem 1.5rem; box-sizing: border-box; color: white;font-size: 1.1rem;">
+                    <p style="margin: 0;">Dear ${recieverUser.lastName + " " + recieverUser.firstName} ,</p>
+                    <small
+                        style="opacity:.7; font-size: .8rem; border-bottom: 1px solid rgb(186, 175, 175); display: block; padding-bottom: 2rem;">Transaction
+                        notification</small>
+                    <p>Credit alert details</p>
+            
+                    <div style="display: flex; justify-content: space-around; font-size: .9rem; ">
+                        <div style="margin-right: 4rem">
+                            <p style="font-weight: bold; font-size: 1.1rem; color: rgb(120, 152, 240);">Amount</p>
+                            <p>NGN ${amount}</p>
+                        </div>
+                        <div>
+                            <p style="font-weight: bold; font-size: 1.1rem; color: rgb(120, 152, 240);">Current Balance</p>
+                            <p>NGN ${recieverAccount.accountBalance}</p>
+                        </div>
+            
+                    </div>
+                    <div>
+                        <p style="font-weight: bold; font-size: 1.1rem; margin-bottom: 0; color: rgb(120, 152, 240);">Description
+                        </p>
+                        <p style="margin-top: 0;">${transaction.description}</p>
+                    </div>
+                    <div>
+                        <p style="font-weight: bold; font-size: 1.1rem; margin-bottom: 0; ">Transaction Reference</p>
+                        <p style="margin-top: 0;">${transaction.transactionId}</p>
+                    </div>
+                    <div>
+                        <p style="font-weight: bold; font-size: 1.1rem; margin-bottom: 0;">Transactin Date/Time</p>
+                        <p style="margin-top: 0;">${new Date(transaction.transactionDate).toLocaleDateString("en-us", {
+                            weekday: 'long',
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric',
+                          })}<br> ${new Date(transaction.transactionDate).toLocaleTimeString("en-us")}</p>
+                    </div>
+                    <p> Thank you for banking with us.</p>
+                </div>`,
+                  };
+                  transporter.sendMail(mailOptionsDebit, (err, info) => {
+                    if (err) {
+                      console.log(err);
+                    } else {
+                      console.log('Email sent successfully!');
+                    }
+                  });
+                  transporter.sendMail(mailOptionsCredit, (err, info) => {
+                    if (err) {
+                      console.log(err);
+                    } else {
+                      console.log('Email sent successfully!');
+                    }
+                  });
+                res.status(200).json({message:"funds transferred", balance:senderAccount.accountBalance})
+            }
+            else{
+                res.status(500).json({error:"Not enough money in your account!"})
+            }
+            
         }else{
             res.status(401).json({message:"You are unauthorised"})
         }
     }catch (err){
-        return res.status(500).json({error:"Invalid Token!"});
+        return res.status(500).json({message:"Invalid Token!", error: err.message});
     }
 })
 
@@ -249,8 +375,8 @@ app.get("/getAccount", async (req, res)=>{
         const user = await User.findOne({_id:decodedToken._id})
         if(decodedToken._id == user._id){
             const userID = await Bank_Account.findOne({accountNumber:recieverAcct})
-            const recieverName = await User.findById(userID.user)
             if (userID){
+                const recieverName = await User.findById(userID.user)
                 res.status(200).json({message:recieverName.firstName + " " + recieverName.lastName})
 
             }else{

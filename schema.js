@@ -109,12 +109,12 @@ const bankAccountSchema = new mongoose.Schema({
       required: true,
     },
     sourceAccount: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'BankAccount',
+      type: String,
+      required: true,
     },
     destinationAccount: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'BankAccount',
+      type: String,
+      required: true,
     },
     description: {
       type: String,
