@@ -51,7 +51,7 @@ const bankAccountSchema = new mongoose.Schema({
     accountBalance:{
         type:Number,
         required:true,
-        default:0.0
+        default:100.0
     },
     accountNumber: {
       type: String,
