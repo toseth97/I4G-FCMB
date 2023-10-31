@@ -185,6 +185,7 @@ app.post("/signup", async (req, res) => {
 });
 
 app.post("/auth_login", async (req, res)=>{
+    
     let { username,password } = req.body;
     // {if (Number(username)){
     //     const {user} = await Bank_Account.findOne({accountNumber:String(username)})
