@@ -29,6 +29,9 @@ const upload = multer({storage:storage})
 
 
 //set up ur middleware
+app.use(bodyParser.json()); // Parses JSON bodies
+app.use(bodyParser.raw()); // Parses raw bodies
+app.use(bodyParser.text());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(
     session({
@@ -185,20 +188,20 @@ app.post("/signup", async (req, res) => {
 });
 
 app.post("/auth_login", async (req, res)=>{
-    
     let { username,password } = req.body;
     // {if (Number(username)){
-    //     const {user} = await Bank_Account.findOne({accountNumber:String(username)})
-    //     username = await User.findOne({_id:user})
-    // }}
-    const user = {
-        username:username.toLowerCase(),
-        password:password
-    }
-
-    passport.authenticate("local", (err, user) => {
-        if (err) throw err;
-        if (!user)
+        //     const {user} = await Bank_Account.findOne({accountNumber:String(username)})
+        //     username = await User.findOne({_id:user})
+        // }}
+        const user = {
+            username:username.toLowerCase(),
+            password:password
+        }
+        
+        passport.authenticate("local", (err, user) => {
+            
+            if (err) throw err;
+            if (!user)
             res.status(401).json({ error: "Username or password incorrect" });
         else {
             req.logIn(user, async (err) => {
@@ -206,16 +209,19 @@ app.post("/auth_login", async (req, res)=>{
                 const token = jwt.sign(
                     { _id: user._id, },
                     process.env.TOKEN_SECRET
-                );
-                const loggedUser = await User.findOne({username:username}).select(["-salt", "-hash"])
-                const account = await Bank_Account.findOne({user:loggedUser._id}).select(["-_id", "-user", "-__v"])
-                res.header("auth-token", token).status(200).json({
+                    );
+                    const loggedUser = await User.findOne({username:username}).select(["-salt", "-hash"])
+                    const account = await Bank_Account.findOne({user:loggedUser._id}).select(["-_id", "-user", "-__v"])
+                    
+                    
+                    res.header("auth-token", token).status(200).json({
                     email:loggedUser.username,
                     fullName: loggedUser.lastName + " " + loggedUser.firstName,
                     account,
                     token: token,
                 });
             });
+            
         }
     })(req, res)
     
@@ -226,6 +232,7 @@ app.post("/send_money", async (req, res)=>{
     const recieverAcct = req.body.account
     const description = req.body.description
     const amount = req.body.amount
+    
     try{
         const token = req.headers.authorization.split(" ")[1]
         const decodedToken = jwt.verify(token, process.env.TOKEN_SECRET);
@@ -244,7 +251,6 @@ app.post("/send_money", async (req, res)=>{
                 const transaction = await Transaction.create({
                     transactionId : require("crypto").randomBytes(16).toString("hex"),
                     amount:amount,
-                    transactionType: "debit",
                     transactionDate: new Date(),
                     sourceAccount: senderAccount.accountNumber,
                     destinationAccount: recieverAccount.accountNumber,
@@ -369,7 +375,8 @@ app.post("/send_money", async (req, res)=>{
 })
 
 app.get("/getAccount", async (req, res)=>{
-    const recieverAcct = req.body.account
+    const recieverAcct = req.query.account
+   
     try{
         const token = req.headers.authorization.split(" ")[1]
         const decodedToken = jwt.verify(token, process.env.TOKEN_SECRET);
@@ -393,6 +400,16 @@ app.get("/getAccount", async (req, res)=>{
     
 })
 
+
+app.post("/logout", (req, res) => {
+    req.logout((err) => {
+        if (!err) {
+            res.status(200).json({ message: "user logged out" });
+        } else {
+            res.status(500).json({ error: "unable to logout user" });
+        }
+    });
+});
 
 
 app.listen(port, ()=>{

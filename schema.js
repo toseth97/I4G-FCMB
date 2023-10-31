@@ -101,7 +101,7 @@ const bankAccountSchema = new mongoose.Schema({
     },
     transactionType: {
       type: String,
-      required: true,
+      
     },
     transactionDate: {
       type: Date,
