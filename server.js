@@ -410,8 +410,8 @@ app.get("/update_dashboard", async (req, res)=>{
         const user = await User.findOne({_id:decodedToken._id})
         if(decodedToken._id == user._id){
             const account = await Bank_Account.findOne({user:user._id})
-            console.log(account)
-            res.status(200).json({message:account.accountBalance})
+            const transactions = await Transaction.find({$or:[{sourceAccount:String(account.accountNumber)},{destinationAccount:String(account.accountNumber)}]}).sort("-transactionDate").limit(10)
+            res.status(200).json({message:account.accountBalance, transactions:transactions})
                 
         }else{
             res.status(401).json({message:"You are unauthorised"})
