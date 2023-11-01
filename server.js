@@ -9,7 +9,8 @@ const cors = require("cors");
 const jwt = require("jsonwebtoken");
 const multer = require("multer")
 const nodemailer = require("nodemailer")
-const {User, Transaction, Bank_Account} = require("./schema")
+const {User, Transaction, Bank_Account} = require("./schema");
+const { log } = require("console");
 
 
 //initializing Express framework
@@ -398,6 +399,27 @@ app.get("/getAccount", async (req, res)=>{
         return res.status(500).json({error:"Invalid Token!"});
     }
     
+})
+
+app.get("/update_dashboard", async (req, res)=>{
+    try{
+        const token = req.headers.authorization.split(" ")[1]
+        
+        const decodedToken = jwt.verify(token, process.env.TOKEN_SECRET);
+        
+        const user = await User.findOne({_id:decodedToken._id})
+        if(decodedToken._id == user._id){
+            const account = await Bank_Account.findOne({user:user._id})
+            console.log(account)
+            res.status(200).json({message:account.accountBalance})
+                
+        }else{
+            res.status(401).json({message:"You are unauthorised"})
+        }
+    }catch (err){
+        
+        return res.status(500).json({error:"Invalid Token!"});
+    }
 })
 
 
