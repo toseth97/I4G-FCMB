@@ -151,12 +151,12 @@ app.post("/signup", async (req, res) => {
                     user: user._id,
                 })
                 const mailOptions = {
-                    from: 'FCMB Online Banking i4G <no-reply@fcmb.com>',
+                    from: 'Fund Fortress Online Banking i4G <no-reply@fcmb.com>',
                     to: user.username,
                     subject: `Congratulations, Your account as been created`,
                     html:`<div
                     style="width: 100vw; height: 50vh; border-radius:10px; background-color: rgb(31, 34, 33); padding: 2rem 1.5rem; box-sizing: border-box; color: white;font-size: 1.2rem;">
-                    <h1 style="text-align: center; font-size: 2.5rem;">FCMB i4G</h1>
+                    <h1 style="text-align: center; font-size: 2.5rem;">Fund Fortress i4G</h1>
                     <p>Dear ${user.lastName + " " + user.firstName},</p>
                     <p>Thank you for opening an account with us, Your bank account number is below</p>
                     <p>Account Number: <span style="font-weight: bold;">${accountDetails.accountNumber}</span> </p>
@@ -260,7 +260,7 @@ app.post("/send_money", async (req, res)=>{
                 const mailOptionsDebit = {
                     from: 'Fund Fortress Online Banking i4G <no-reply@fcmb.com>',
                     to: user.username,
-                    subject: `Fund Fortress Transaction Notification`,
+                    subject: `Fund Fortress Debit Transaction Notification`,
                     html:`<div
                     style="width: 100vw; min-height: 60vh; border-radius:10px; background-color: rgb(31, 34, 33); padding: 2rem 1.5rem; box-sizing: border-box; color: white;font-size: 1.1rem;">
                     <p style="margin: 0;">Dear ${user.lastName + " " + user.firstName} ,</p>
@@ -305,7 +305,7 @@ app.post("/send_money", async (req, res)=>{
                   const mailOptionsCredit = {
                     from: 'Fund Fortress Online Banking i4G <no-reply@fcmb.com>',
                     to: recieverUser.username,
-                    subject: `Fund Fortress Transaction Notification`,
+                    subject: `Fund Fortress Credit Transaction Notification`,
                     html:`<div
                     style="width: 100vw; min-height: 60vh; border-radius:10px; background-color: rgb(31, 34, 33); padding: 2rem 1.5rem; box-sizing: border-box; color: white;font-size: 1.1rem;">
                     <p style="margin: 0;">Dear ${recieverUser.lastName + " " + recieverUser.firstName} ,</p>
