@@ -297,13 +297,13 @@ app.post("/send_money", async (req, res)=>{
                             day: 'numeric',
                             month: 'long',
                             year: 'numeric',
-                          })}<br> ${new Date(transaction.transactionDate).toLocaleTimeString("en-us")}</p>
+                        })}<br> ${new Date(transaction.transactionDate).toLocaleTimeString("en-us")}</p>
                     </div>
                     <p> Thank you for banking with us.</p>
                 </div>`,
-                  };
+                };
 
-                  const mailOptionsCredit = {
+                const mailOptionsCredit = {
                     from: 'Fund Fortress Online Banking i4G <no-reply@fcmb.com>',
                     to: recieverUser.username,
                     subject: `Fund Fortress Credit Transaction Notification`,
@@ -421,7 +421,46 @@ app.get("/update_dashboard", async (req, res)=>{
         return res.status(500).json({error:"Invalid Token!"});
     }
 })
+let otp
+app.get("/sendotp", async (req, res)=>{
 
+    otp = Math.floor(Math.random() * 8)  + "" + Math.floor(Math.random() * 9)+1 + "" + Math.floor(Math.random() * 9)+1 
+    try{
+        const token = req.headers.authorization.split(" ")[1]
+        
+        const decodedToken = jwt.verify(token, process.env.TOKEN_SECRET);
+        
+        const user = await User.findOne({_id:decodedToken._id})
+        if(decodedToken._id == user._id){
+            const mailOptions = {
+                from: 'Fund Fortress Online Banking i4G <no-reply@fcmb.com>',
+                to: user.username,
+                subject: `SecureOTP Transaction`,
+                html:`<div
+                style="width: 100vw; height: 50vh; border-radius:10px; background-color: rgb(31, 34, 33); padding: 2rem 1.5rem; box-sizing: border-box; color: white;font-size: 1.2rem;">
+                <h1 style="text-align: center; font-size: 2.5rem;">Fund Fortress i4G</h1>
+                <p>Dear ${user.lastName + " " + user.firstName},</p>
+                <p>Your one time password is: <strong>${otp}</strong></p>
+                
+            </div>`,
+            };
+            transporter.sendMail(mailOptions, (err, info) => {
+            if (err) {
+                console.log(err);
+            } else {
+                console.log('Email sent successfully!');
+            }
+            });
+            res.status(200).json({message:"otp sent"})
+        }else{
+            res.status(401).json({message:"You are unauthorised"})
+        }
+    }catch (err){
+        
+        return res.status(500).json({error:"Invalid Token!"});
+    }
+    
+})
 
 app.post("/logout", (req, res) => {
     req.logout((err) => {
