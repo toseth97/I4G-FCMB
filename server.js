@@ -474,7 +474,11 @@ app.post("/add_money", async (req, res)=>{
         const decodedToken = jwt.verify(token, process.env.TOKEN_SECRET);
         const user = await User.findOne({_id:decodedToken._id})
         if(decodedToken._id == user._id){
-            const bankDetails = await Bank_Account.findOne({accountNumber:accountNumber})
+
+            if(Number(amount) > 50000){
+                res.status(401).json({error:"You are not allowed to deposit more than 50,000 per deposit"})
+            }else{
+                const bankDetails = await Bank_Account.findOne({accountNumber:accountNumber})
             
             bankDetails.accountBalance = bankDetails.accountBalance + Number(amount)
             await bankDetails.save()
@@ -541,8 +545,11 @@ app.post("/add_money", async (req, res)=>{
 
             res.status(200).json({message:"deposit was successful"})
 
+            }
+
+            
         }else{
-            res.status(401).json({error:"Invalid OTP!"});
+            res.status(401).json({error:"Invalid token!"});
         }
         
     }else{
