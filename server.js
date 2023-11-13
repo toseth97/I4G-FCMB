@@ -471,7 +471,7 @@ app.post("/add_money", async (req, res)=>{
     const token = req.headers.authorization.split(" ")[1]
     console.log(req.body)
     
-    if (otp === myOtp){
+    if (Number(otp) === Number(myOtp)){
         const decodedToken = jwt.verify(token, process.env.TOKEN_SECRET);
         const user = await User.findOne({_id:decodedToken._id})
         if(decodedToken._id == user._id){
