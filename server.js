@@ -256,7 +256,7 @@ app.post("/send_money", async (req, res)=>{
                     sourceAccount: senderAccount.accountNumber,
                     destinationAccount: recieverAccount.accountNumber,
                     description: description,
-                      
+                    
                 })
                 const mailOptionsDebit = {
                     from: 'Fund Fortress Online Banking i4G <no-reply@fcmb.com>',
@@ -421,7 +421,10 @@ app.get("/update_dashboard", async (req, res)=>{
         return res.status(500).json({error:"Invalid Token!"});
     }
 })
+
+
 let otp
+
 app.get("/sendotp", async (req, res)=>{
 
     otp = Math.floor(Math.random() * 8)  + "" + Math.floor(Math.random() * 9)+1 + "" + Math.floor(Math.random() * 9)+1 
@@ -458,9 +461,96 @@ app.get("/sendotp", async (req, res)=>{
     }catch (err){
         
         return res.status(500).json({error:"Invalid Token!"});
+        
     }
     
 })
+
+app.post("/add_money", async (req, res)=>{
+    const {amount, myOtp, accountNumber} = req.body
+    const token = req.headers.authorization.split(" ")[1]
+    
+    if (otp === myOtp){
+        const decodedToken = jwt.verify(token, process.env.TOKEN_SECRET);
+        const user = await User.findOne({_id:decodedToken._id})
+        if(decodedToken._id == user._id){
+            const bankDetails = await Bank_Account.findOne({accountNumber:accountNumber})
+            
+            bankDetails.accountBalance = bankDetails.accountBalance + Number(amount)
+            await bankDetails.save()
+            const transaction = await Transaction.create({
+                transactionId : require("crypto").randomBytes(16).toString("hex"),
+                amount:amount,
+                transactionDate: new Date(),
+                sourceAccount: "Deposit",
+                destinationAccount: bankDetails.accountNumber,
+                description: "Deposit",
+            })
+
+            const mailOptionsCredit = {
+                from: 'Fund Fortress Online Banking i4G <no-reply@fcmb.com>',
+                to: user.username,
+                subject: `Fund Fortress Credit Transaction Notification`,
+                html:`<div
+                style="width: 100vw; min-height: 60vh; border-radius:10px; background-color: rgb(31, 34, 33); padding: 2rem 1.5rem; box-sizing: border-box; color: white;font-size: 1.1rem;">
+                <p style="margin: 0;">Dear ${user.lastName + " " + user.firstName} ,</p>
+                <small
+                    style="opacity:.7; font-size: .8rem; border-bottom: 1px solid rgb(186, 175, 175); display: block; padding-bottom: 2rem;">Transaction
+                    notification</small>
+                <p>Credit alert details</p>
+        
+                <div style="display: flex; justify-content: space-around; font-size: .9rem; ">
+                    <div style="margin-right: 4rem">
+                        <p style="font-weight: bold; font-size: 1.1rem; color: rgb(120, 152, 240);">Amount</p>
+                        <p>NGN ${amount}</p>
+                    </div>
+                    <div>
+                        <p style="font-weight: bold; font-size: 1.1rem; color: rgb(120, 152, 240);">Current Balance</p>
+                        <p>NGN ${bankDetails.accountBalance}</p>
+                    </div>
+        
+                </div>
+                <div>
+                    <p style="font-weight: bold; font-size: 1.1rem; margin-bottom: 0; color: rgb(120, 152, 240);">Description
+                    </p>
+                    <p style="margin-top: 0;">${transaction.description}</p>
+                </div>
+                <div>
+                    <p style="font-weight: bold; font-size: 1.1rem; margin-bottom: 0; ">Transaction Reference</p>
+                    <p style="margin-top: 0;">${transaction.transactionId}</p>
+                </div>
+                <div>
+                    <p style="font-weight: bold; font-size: 1.1rem; margin-bottom: 0;">Transactin Date/Time</p>
+                    <p style="margin-top: 0;">${new Date(transaction.transactionDate).toLocaleDateString("en-us", {
+                        weekday: 'long',
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric',
+                    })}<br> ${new Date(transaction.transactionDate).toLocaleTimeString("en-us")}</p>
+                </div>
+                <p> Thank you for banking with us.</p>
+            </div>`,
+            };
+            transporter.sendMail(mailOptionsCredit, (err, info) => {
+            if (err) {
+                console.log(err);
+            } else {
+                console.log('Email sent successfully!');
+            }
+            });
+
+            res.status(200).json({message:"deposit was successful"})
+
+        }else{
+            res.status(401).json({error:"Invalid OTP!"});
+        }
+        
+    }else{
+        res.status(401).json({error:"Invalid OTP!"});
+    }
+})
+
+
 
 app.post("/logout", (req, res) => {
     req.logout((err) => {
@@ -474,5 +564,5 @@ app.post("/logout", (req, res) => {
 
 
 app.listen(port, ()=>{
-  console.log(`server started on port ${port}`)
+    console.log(`server started on port ${port}`)
 })
