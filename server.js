@@ -469,6 +469,7 @@ app.get("/sendotp", async (req, res)=>{
 app.post("/add_money", async (req, res)=>{
     const {amount, myOtp, accountNumber} = req.body
     const token = req.headers.authorization.split(" ")[1]
+    console.log(req.body)
     
     if (otp === myOtp){
         const decodedToken = jwt.verify(token, process.env.TOKEN_SECRET);
