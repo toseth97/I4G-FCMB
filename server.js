@@ -427,7 +427,7 @@ let otp
 
 app.get("/sendotp", async (req, res)=>{
 
-    otp = Math.floor(Math.random() * 8)  + "" + Math.floor(Math.random() * 9)+1 + "" + Math.floor(Math.random() * 9)+1 
+    otp = Math.floor(Math.random() * 10000) 
     try{
         const token = req.headers.authorization.split(" ")[1]
         
